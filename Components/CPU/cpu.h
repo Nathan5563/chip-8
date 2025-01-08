@@ -1,10 +1,7 @@
 #ifndef __CPU_H__
 #define __CPU_H__
 
-typedef unsigned char BYTE;
-typedef unsigned short WORD;
-
-BYTE mem[4096];
+#include "../types.h"
 
 struct _cpu;
 typedef struct _cpu cpu;

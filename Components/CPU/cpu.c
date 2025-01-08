@@ -2,6 +2,7 @@
 #include "../Stack/stack.h"
 #include "../Display/display.h"
 #include "../font.h"
+#include "../mem.h"
 
 #define FONT_SIZE 80
 

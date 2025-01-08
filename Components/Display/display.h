@@ -5,13 +5,15 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
+#include "../types.h"
+
 #define MAP_WIDTH 64
 #define MAP_HEIGHT 32
 #define GRID_SIZE 20
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 640
 
-unsigned char world_map[2048];
+BYTE world_map[2048];
 
 void print_error(const char *err);
 
