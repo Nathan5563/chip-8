@@ -1,8 +1,10 @@
+#include <stdlib.h>
+
 #include "cpu.h"
 #include "../Stack/stack.h"
-#include "../Display/display.h"
+#include "../Map/map.h"
 #include "../font.h"
-#include "../mem.h"
+#include "../Memory/mem.h"
 
 #define FONT_SIZE 80
 
@@ -36,6 +38,13 @@ cpu* cpu_init()
         if (i < FONT_SIZE) mem[i + 80] = font[i];
         if (!(i >= 80 && i < 160)) mem[i] = 0;
         if (i < 16) c->V[i] = 0;
-        if (i < 2048) world_map[i] = 0;
+        if (i < 2048) map[i] = 0;
     }
+    return c;
+}
+
+void cpu_destroy(cpu* c)
+{
+    stack_destroy(c->Stack);
+    free(c);
 }

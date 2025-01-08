@@ -14,4 +14,6 @@ WORD cpu_fetch(cpu* c);
 
 void cpu_execute(cpu* c, WORD ins);
 
+void cpu_destroy(cpu* c);
+
 #endif

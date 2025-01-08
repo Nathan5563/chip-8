@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "load_rom.h"
-#include "../mem.h"
+#include "../Memory/mem.h"
 
 void load_rom(FILE* rom)
 {

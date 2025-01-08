@@ -13,8 +13,6 @@
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 640
 
-BYTE world_map[2048];
-
 void print_error(const char *err);
 
 bool draw(SDL_Window** window, SDL_Surface** surface);

@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "Components/CPU/cpu.h"
+#include "Components/Parser/load_rom.h"
+
 // call cpu_init
 // read which rom to load from cli
 // call read_rom on opened file
@@ -14,5 +17,16 @@
 //   to have an if statement inside that runs at 60hz
 
 int main(int argc, char* argv[]) {
-    
+    // TODO: validate cli input (with error handling)
+    if (!argv[1])
+    {
+        fprintf(stderr, "Please provide a CHIP-8 ROM.\n");
+        return 1;
+    }
+    cpu* c = cpu_init();
+    FILE* rom = fopen(argv[1], "rb");
+    load_rom(rom);
+    fclose(rom);
+    cpu_destroy(c);
+    return 0;
 }
