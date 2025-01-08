@@ -3,6 +3,6 @@
 
 #include <stdio.h>
 
-unsigned char* read_rom(FILE* rom);
+void load_rom(FILE* rom);
 
 #endif
