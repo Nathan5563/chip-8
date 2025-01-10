@@ -2,9 +2,9 @@ CC=gcc
 CFLAGS=-g3 -Wall -pedantic -std=c99
 LDFLAGS=$(shell pkg-config --libs sdl2)
 
-all: CHIP-8
+all: chip8
 
-CHIP-8: OBJs/cpu.o OBJs/display.o OBJs/stack.o OBJs/load_rom.o OBJs/map.o OBJs/mem.o OBJs/driver.o
+chip8: OBJs/cpu.o OBJs/display.o OBJs/stack.o OBJs/load_rom.o OBJs/map.o OBJs/mem.o OBJs/driver.o
 	${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
 
 OBJs/cpu.o: Components/CPU/cpu.c Components/CPU/cpu.h
