@@ -9,6 +9,8 @@
 struct _cpu;
 typedef struct _cpu cpu;
 
+extern bool quit_60Hz_thread;
+
 cpu* cpu_init();
 
 WORD cpu_get_index_reg(cpu* c);
@@ -20,5 +22,7 @@ WORD cpu_fetch(cpu* c);
 void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** surface);
 
 void cpu_destroy(cpu* c);
+
+void cpu_decrement_timers(cpu* c);
 
 #endif

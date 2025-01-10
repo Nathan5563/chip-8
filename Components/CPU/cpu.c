@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "cpu.h"
 #include "../Display/display.h"
@@ -109,4 +110,10 @@ void cpu_destroy(cpu* c)
 {
     stack_destroy(c->Stack);
     free(c);
+}
+
+void cpu_decrement_timers(cpu* c)
+{
+    if (c->Delay > 0) c->Delay--;
+    if (c->Sound > 0) c->Sound--;
 }
