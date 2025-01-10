@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g3 -Wall -pedantic -std=c99
+CFLAGS=-g3 -Wall -pedantic
 LDFLAGS=$(shell pkg-config --libs sdl2)
 
 all: chip8
@@ -30,4 +30,4 @@ OBJs/driver.o: driver.c Components/CPU/cpu.h Components/Parser/load_rom.h
 	mv driver.o OBJs
 
 clean:
-	rm -f CHIP-8 OBJs/*.o driver.o
+	rm -f chip8 OBJs/*.o driver.o
