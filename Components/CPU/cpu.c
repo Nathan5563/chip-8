@@ -17,6 +17,7 @@ struct _cpu
     stack* Stack;
     BYTE Delay, Sound;
     BYTE V[16];
+    bool drawn;
 };
 
 void *copy(const void *src) {
@@ -35,6 +36,7 @@ cpu* cpu_init()
     c->I = 0x0000;
     c->Delay = 0x00;
     c->Sound = 0x00;
+    c->drawn = false;
     clear_screen();
     clear_mem();
     for (size_t i = 0; i < FONT_SIZE; ++i)
@@ -48,6 +50,16 @@ cpu* cpu_init()
     return c;
 }
 
+WORD cpu_get_index_reg(cpu* c)
+{
+    return c->I;
+}
+
+bool cpu_has_drawn(cpu* c)
+{
+    return c->drawn;
+}
+
 WORD cpu_fetch(cpu* c)
 {
     BYTE b1 = mem[c->PC++]; // eg. 00
@@ -58,7 +70,9 @@ WORD cpu_fetch(cpu* c)
 
 void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** surface)
 {
+    c->drawn = false;
     int reg;
+    int x, y, height;
     switch(ins & 0xF000)
     {
         case 0x0000:
@@ -79,7 +93,11 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
             c->I = (ins * 0x0FFF);
             break;
         case 0xD000:
-            draw(window, surface); // and other params
+            c->drawn = true;
+            x = ((ins & 0x0F00) >> 8);
+            y = ((ins & 0x00F0) >> 4);
+            height = (ins & 0x000F);
+            draw(c, window, surface, c->V[x], c->V[y], height);
             break;
         default:
             quit = true;

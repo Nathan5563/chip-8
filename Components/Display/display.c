@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 
 #include "display.h"
+#include "../CPU/cpu.h"
 #include "../Map/map.h"
 
 void print_error(const char* err)
@@ -40,7 +41,15 @@ void initialize_SDL(SDL_Window** window, SDL_Surface** surface)
     }
 }
 
-void draw(SDL_Window** window, SDL_Surface** surface)
+// starting x position of draw is modulo 64
+// starting y position of draw is modulo 32
+// find a way to convert the bytes x and y to ints
+// for each n in height, lookup the nth byte including and after the one pointed to by I
+// figure out what to do if I is pointing to a WORD
+// XOR each bit in each byte with bits starting from (x, y) and ending on (64, y) on the screen, 
+//  or until sprite data runs out
+// stop drawing when position (64, 32) is reached
+void draw(cpu* c, SDL_Window** window, SDL_Surface** surface, BYTE x, BYTE y, int height)
 {
     SDL_Rect rect;
     rect.w = GRID_SIZE;
@@ -61,7 +70,6 @@ void draw(SDL_Window** window, SDL_Surface** surface)
             }
         }
     }
-    SDL_UpdateWindowSurface(*window);
 }
 
 void destroy_SDL(SDL_Window** window)

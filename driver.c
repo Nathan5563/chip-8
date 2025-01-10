@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
             event.type == SDL_QUIT) quit = true;
         WORD ins = cpu_fetch(c);
         cpu_exec(c, ins, quit, &window, &surface);
+        if (cpu_has_drawn(c)) SDL_UpdateWindowSurface(window);
     }
 
     destroy_SDL(&window);
