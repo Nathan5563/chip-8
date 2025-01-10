@@ -5,44 +5,42 @@
 #include "display.h"
 #include "../Map/map.h"
 
-// int main(int argc, char* argv[])
-// {
-//     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-//         print_error(SDL_GetError());
-//     else
-//     {
-//         SDL_Window* window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED,
-//                 SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT,
-//                 SDL_WINDOW_RESIZABLE);
-//         if(!window) print_error(SDL_GetError());
-//         else
-//         {
-//             SDL_Surface* surface = SDL_GetWindowSurface(window);
-//             if (!surface) print_error(SDL_GetError());
-//             else
-//             {
-//                 bool quit = false;  
-//                 while (!quit)
-//                 {
-//                     if (!draw(&window, &surface)) quit = true;
-//                     SDL_Event event;
-//                     if (SDL_PollEvent(&event) && 
-//                         event.type == SDL_QUIT) quit = true;
-//                 }
-//             }
-//             SDL_DestroyWindow(window);
-//         }
-//         SDL_Quit();
-//     }
-//     return 0;
-// }
-
 void print_error(const char* err)
 {
     fprintf(stderr, "SDL Error: %s\n", err);
 }
 
-bool draw(SDL_Window** window, SDL_Surface** surface)
+// else
+// {
+//     bool quit = false;  
+//     while (!quit)
+//     {
+//         if (!draw(&window, &surface)) quit = true;
+//         SDL_Event event;
+//         if (SDL_PollEvent(&event) && 
+//             event.type == SDL_QUIT) quit = true;
+//     }
+// }
+
+void initialize_SDL(SDL_Window** window, SDL_Surface** surface)
+{
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+        print_error(SDL_GetError());
+    else
+    {
+        *window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED,
+                SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT,
+                SDL_WINDOW_RESIZABLE);
+        if(!*window) print_error(SDL_GetError());
+        else
+        {
+            *surface = SDL_GetWindowSurface(*window);
+            if (!*surface) print_error(SDL_GetError());
+        }
+    }
+}
+
+void draw(SDL_Window** window, SDL_Surface** surface)
 {
     SDL_Rect rect;
     rect.w = GRID_SIZE;
@@ -59,15 +57,15 @@ bool draw(SDL_Window** window, SDL_Surface** surface)
                     (*surface)->format, 255, 255, 255)))
                 {
                     print_error(SDL_GetError());
-                    return false;
                 }
             }
         }
     }
-    if (SDL_UpdateWindowSurface(*window)) 
-    {
-        print_error(SDL_GetError());
-        return false;
-    }
-    return true;
+    SDL_UpdateWindowSurface(*window);
+}
+
+void destroy_SDL(SDL_Window** window)
+{
+    SDL_DestroyWindow(*window);
+    SDL_Quit();
 }

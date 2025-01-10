@@ -5,4 +5,6 @@
 
 extern BYTE mem[4096];
 
+void clear_mem();
+
 #endif

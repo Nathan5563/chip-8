@@ -15,6 +15,10 @@
 
 void print_error(const char *err);
 
-bool draw(SDL_Window** window, SDL_Surface** surface);
+void initialize_SDL(SDL_Window** window, SDL_Surface** surface);
+
+void draw(SDL_Window** window, SDL_Surface** surface);
+
+void destroy_SDL(SDL_Window** window);
 
 #endif
