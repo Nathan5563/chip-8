@@ -44,12 +44,10 @@ bool xor(int bit, cpu* c, BYTE* x, BYTE* y)
     {
         map[idx] = 0;
         cpu_toggle_flag(c, true);
-        printf("Turned off!\n");
     }
     else if (bit)
     {
         map[idx] = 1;
-        printf("Turned on!\n");
     }
     (*x)++;
     return true;
