@@ -1,7 +1,9 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-typedef unsigned char BYTE;
-typedef unsigned short WORD;
+#include <stdint.h>
+
+typedef uint8_t BYTE;
+typedef uint16_t WORD;
 
 #endif
