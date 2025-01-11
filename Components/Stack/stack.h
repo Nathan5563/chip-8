@@ -12,7 +12,7 @@ typedef struct _stack stack;
  * @param copy a pointer to a copy function
  * @return a pointer to a stack
  */
-stack* stack_create(void* (*copy)(const void*));
+stack* stack_create();
 
 /**
  * Checks if a stack is empty.
@@ -27,7 +27,7 @@ bool stack_is_empty(stack* s);
  * @param s a pointer to a stack
  * @param val a pointer to a value to push
  */
-void stack_push(stack* s, const void* val);
+void stack_push(stack* s, WORD val);
 
 /**
  * Returns the top value on the stack.
@@ -35,7 +35,7 @@ void stack_push(stack* s, const void* val);
  * @param s a pointer to a stack
  * @return a pointer to the top value
  */
-void* stack_peek(stack* s);
+WORD stack_peek(stack* s);
 
 /**
  * Returns the top value and removes it from the stack. It is the
@@ -44,7 +44,7 @@ void* stack_peek(stack* s);
  * @param s a pointer to a stack
  * @return a pointer to the top value
  */
-void* stack_pop(stack* s);
+WORD stack_pop(stack* s);
 
 /**
  * Frees all memory associated with the stack.

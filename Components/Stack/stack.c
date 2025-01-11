@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "stack.h"
+#include "../types.h"
 
 #define INIT_STACK_CAP 10
 
@@ -9,27 +10,24 @@ struct _stack
 {
     size_t length;
     size_t cap;
-    void** arr;
-    void* top;
-
-    void* (*copy)(const void*);
+    WORD* arr;
+    WORD top;
 };
 
-stack* stack_create(void* (*copy)(const void*))
+stack* stack_create()
 {
     stack* s = malloc(sizeof(stack));
     s->length = 0;
     s->cap = INIT_STACK_CAP;
-    s->arr = malloc(s->cap * sizeof(void*));
+    s->arr = malloc(s->cap * sizeof(WORD));
     s->top = NULL;
-    s->copy = copy;
     return s;
 }
 
 static void stack_embiggen(stack* s)
 {
     s->cap *= 2;
-    void** new_arr = realloc(s->arr, s->cap * sizeof(void*));
+    WORD* new_arr = realloc(s->arr, s->cap * sizeof(WORD));
     // realistically, memory allocation will never fail
     // in my use case. Still, will probably handle later.
     //
@@ -43,22 +41,22 @@ bool stack_is_empty(stack* s)
     return (s->length == 0);
 }
 
-void stack_push(stack* s, const void* val)
+void stack_push(stack* s, WORD val)
 {
     if (s->length == s->cap) stack_embiggen(s);
-    void* val_copy = s->copy(val);
+    WORD val_copy = val;
     s->arr[s->length] = val_copy;
     s->top = s->arr[s->length++];
 }
 
-void* stack_peek(stack* s)
+WORD stack_peek(stack* s)
 {
     return s->top;
 }
 
-void* stack_pop(stack* s)
+WORD stack_pop(stack* s)
 {
-    void* val = stack_peek(s);
+    WORD val = stack_peek(s);
     s->length--;
     if (s->length != 0) s->top = s->arr[s->length - 1];
     return val;
@@ -66,10 +64,6 @@ void* stack_pop(stack* s)
 
 void stack_destroy(stack* s)
 {
-    for (size_t i = 0; i < s->length; ++i)
-    {
-        free(s->arr[i]);
-    }
     free(s->arr);
     free(s);
 }
