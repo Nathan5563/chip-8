@@ -25,4 +25,6 @@ void cpu_destroy(cpu* c);
 
 void cpu_decrement_timers(cpu* c);
 
+void cpu_toggle_flag(cpu* c, bool enable);
+
 #endif

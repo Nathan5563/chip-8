@@ -91,7 +91,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
             c->V[reg] += (ins & 0x00FF);
             break;
         case 0xA000:
-            c->I = (ins * 0x0FFF);
+            c->I = (ins & 0x0FFF);
             break;
         case 0xD000:
             c->drawn = true;
@@ -116,4 +116,17 @@ void cpu_decrement_timers(cpu* c)
 {
     if (c->Delay > 0) c->Delay--;
     if (c->Sound > 0) c->Sound--;
+}
+
+void cpu_toggle_flag(cpu* c, bool enable)
+{
+    if (enable)
+    {
+        c->V[0xF] = 1;
+    }
+    else
+    {
+        c->V[0xF] = 0;
+    }
+    return;
 }
