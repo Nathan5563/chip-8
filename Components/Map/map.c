@@ -1,5 +1,6 @@
-#include "map.h"
 #include <stddef.h>
+
+#include "map.h"
 
 int map[2048];
 

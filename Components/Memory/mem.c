@@ -1,5 +1,6 @@
-#include "mem.h"
 #include <stddef.h>
+
+#include "mem.h"
 
 BYTE mem[4096];
 

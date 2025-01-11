@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 
 #include "cpu.h"
 #include "../Display/display.h"
@@ -9,10 +10,36 @@
 #include "../Map/map.h"
 #include "../Memory/mem.h"
 #include "../font.h"
+#include "../types.h"
+#include "../Quirks/quirks.h"
 
 #define FONT_SIZE 80
 
 // TODO: Use lots of macros to prevent hex confusion
+
+#define FOURTH_BIT(word) ((word & 0xF000) >> 12)
+#define THIRD_BIT(word) ((word & 0x0F00) >> 8)
+#define SECOND_BIT(word) ((word & 0x00F0) >> 4)
+#define FIRST_BIT(word) (word & 0x000F)
+
+#define TRAILING_BITS(word) (word & 0x0FFF)
+
+#define SECOND_BYTE(word) ((word & 0xFF00) >> 8)
+#define FIRST_BYTE(word) (word & 0x00FF)
+
+#define SECOND_NIBBLE(byte) ((byte & 0xF0) >> 4)
+#define FIRST_NIBBLE(byte) (byte & 0x0F)
+
+#define STARTING_LOCATION 0x200
+#define FONT_LOCATION 0x50
+#define BYTES_PER_CHAR 5
+
+#define MEMORY_LIMIT 0x1000
+#define BYTE_LIMIT 0x100
+
+#define NUM_REGISTERS 16
+
+#define HEX_TO_DEC(N) (FIRST_BIT(N) + SECOND_BIT(N) * 16 + THIRD_BIT(N) * 256 + FOURTH_BIT(N) * 4096)
 
 struct _cpu
 {
@@ -28,20 +55,20 @@ cpu* cpu_init()
 {
     cpu* c = malloc(sizeof(cpu));
     c->Stack = stack_create();
-    c->PC = 0x0200;
-    c->I = 0x0000;
-    c->Delay = 0x00;
-    c->Sound = 0x00;
+    c->PC = STARTING_LOCATION;
+    c->I = 0;
+    c->Delay = 0;
+    c->Sound = 0;
     c->drawn = false;
     clear_screen();
     clear_mem();
     for (size_t i = 0; i < FONT_SIZE; ++i)
     {
-        mem[i + 0x50] = font[i];
+        mem[i + FONT_LOCATION] = font[i];
     }
-    for (size_t i = 0; i < 16; ++i)
+    for (size_t i = 0; i < NUM_REGISTERS; ++i)
     {
-        c->V[i] = 0x00;
+        c->V[i] = 0;
     }
     return c;
 }
@@ -67,149 +94,184 @@ WORD cpu_fetch(cpu* c)
 void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** surface)
 {
     c->drawn = false;
-    int X, Y, N;
-    switch(ins & 0xF000)
+    WORD X, Y, N;
+    switch(FOURTH_BIT(ins))
     {
-        case 0x0000:
-            switch(ins & 0x00FF)
+        case 0x0:
+            switch(FIRST_BYTE(ins))
             {
-                case 0x00E0:
+                case 0xE0:
                     clear_screen();
                     break;
-                case 0x00EE:
+                case 0xEE:
                     c->PC = stack_pop(c->Stack);
                     break;
             }
             break;
-        case 0x1000:
-            c->PC = (ins & 0x0FFF);
+        case 0x1:
+            c->PC = TRAILING_BITS(ins);
             break;
-        case 0x2000:
+        case 0x2:
             stack_push(c->Stack, c->PC);
-            c->PC = (ins & 0x0FFF);
+            c->PC = TRAILING_BITS(ins);
             break;
-        case 0x3000:
-            X = ((ins & 0x0F00) >> 8);
-            if (c->V[X] == (ins & 0x00FF)) c->PC += 2;
+        case 0x3:
+            X = THIRD_BIT(ins);
+            if (c->V[X] == FIRST_BYTE(ins)) c->PC += 2;
             break;
-        case 0x4000:
-            X = ((ins & 0x0F00) >> 8);
-            if (c->V[X] != (ins & 0x00FF)) c->PC += 2;
+        case 0x4:
+            X = THIRD_BIT(ins);
+            if (c->V[X] != FIRST_BYTE(ins)) c->PC += 2;
             break;
-        case 0x5000:
-            X = ((ins & 0x0F00) >> 8);
-            Y = ((ins & 0x00F0) >> 4);
+        case 0x5:
+            X = THIRD_BIT(ins);
+            Y = SECOND_BIT(ins);
             if (c->V[X] == c->V[Y]) c->PC += 2;
             break;
-        case 0x6000:
-            X = ((ins & 0x0F00) >> 8);
-            c->V[X] = (ins & 0x00FF);
+        case 0x6:
+            X = THIRD_BIT(ins);
+            c->V[X] = FIRST_BYTE(ins);
             break;
-        case 0x7000:
-            X = ((ins & 0x0F00) >> 8);
-            c->V[X] += (ins & 0x00FF);
+        case 0x7:
+            X = THIRD_BIT(ins);
+            c->V[X] += FIRST_BYTE(ins);
             break;
-        case 0x8000:
-            X = ((ins & 0x0F00) >> 8);
-            Y = ((ins & 0x00F0) >> 4);
-            switch(ins & 0x000F)
+        case 0x8:
+            X = THIRD_BIT(ins);
+            Y = SECOND_BIT(ins);
+            switch(FIRST_BIT(ins))
             {
-                case 0x0000:
+                case 0x0:
                     c->V[X] = c->V[Y];
                     break;
-                case 0x0001:
+                case 0x1:
                     c->V[X] |= c->V[Y];
                     break;
-                case 0x0002:
+                case 0x2:
                     c->V[X] &= c->V[Y];
                     break;
-                case 0x0003:
+                case 0x3:
                     c->V[X] ^= c->V[Y];
                     break;
-                case 0x0004:
+                case 0x4:
                     c->V[X] += c->V[Y];
-                    if (c->V[X] + c->V[Y] >= 0x100) c->V[0xF] = 1;
+                    if (c->V[X] + c->V[Y] >= BYTE_LIMIT) c->V[0xF] = 1;
                     else c->V[0xF] = 0;
                     break;
-                case 0x0005:
+                case 0x5:
                     c->V[X] -= c->V[Y];
                     if (c->V[X] > c->V[Y]) c->V[0xF] = 1;
                     else c->V[0xF] = 0;
                     break;
-                case 0x0006:
+                case 0x6:
                     // Ambiguous
                     break;
-                case 0x0007:
+                case 0x7:
                     c->V[X] = c->V[Y] - c->V[X];
                     if (c->V[Y] > c->V[X]) c->V[0xF] = 1;
                     else c->V[0xF] = 0;
                     break;
-                case 0x000E:
+                case 0xE:
                     // Ambiguous
                     break;
             }
-        case 0x9000:
-            X = ((ins & 0x0F00) >> 8);
-            Y = ((ins & 0x00F0) >> 4);
+        case 0x9:
+            X = THIRD_BIT(ins);
+            Y = SECOND_BIT(ins);
             if (c->V[X] != c->V[Y]) c->PC += 2;
             break;
-        case 0xA000:
-            c->I = (ins & 0x0FFF);
+        case 0xA:
+            c->I = TRAILING_BITS(ins);
             break;
-        case 0xB000:
+        case 0xB:
             // Ambiguous
             break;
-        case 0xC000:
-            X = ((ins & 0x0F00) >> 8);
-            c->V[X] = (rand() % (0xFF - 0x00 + 1) + 0x00) & (ins & 0x00FF);
-        case 0xD000:
+        case 0xC:
+            X = THIRD_BIT(ins);
+            // pseudorandom number between 0x00 (0) and 0xFF (255)
+            c->V[X] = (rand() % (0xFF - 0x00 + 1) + 0x00) & FIRST_BYTE(ins);
+        case 0xD:
             c->drawn = true;
-            X = ((ins & 0x0F00) >> 8);
-            Y = ((ins & 0x00F0) >> 4);
-            N = (ins & 0x000F);
+            X = THIRD_BIT(ins);
+            Y = SECOND_BIT(ins);
+            N = FIRST_BIT(ins);
             draw(c, window, surface, c->V[X], c->V[Y], N);
             break;
-        case 0xE000:
-            X = ((ins & 0x0F00) >> 8);
-            switch(ins & 0x00FF)
+        case 0xE:
+            X = THIRD_BIT(ins);
+            switch(FIRST_BYTE(ins))
             {
-                case 0x009E:
+                case 0x9E:
                     break;
-                case 0x00A1:
+                case 0xA1:
                     break;
             }
-        case 0xF000:
-            X = ((ins & 0x0F00) >> 8);
-            switch(ins & 0x00FF)
+        case 0xF:
+            X = THIRD_BIT(ins);
+            switch(FIRST_BYTE(ins))
             {
-                case 0x0007:
+                case 0x07:
                     c->V[X] = c->Delay;
                     break;
-                case 0x000A:
-                    
+                case 0x0A:
                     break;
-                case 0x0015:
+                case 0x15:
                     c->Delay = c->V[X];
                     break;
-                case 0x0018:
+                case 0x18:
                     c->Sound = c->V[X];
                     break;
-                case 0x001E:
+                case 0x1E:
                     c->I += c->V[X];
-                    if (c->I + c->V[X] >= 0x1000) c->V[0xF] = 1;
+                    if (c->I + c->V[X] >= MEMORY_LIMIT) c->V[0xF] = 1;
                     // might need to set VF = 0 otherwise, but leave as is for now
                     break;
-                case 0x0029:
-                    // set I to the address where the character represented by the
-                    // last nibble of VX is stored in the font (in memory)
+                case 0x29:
+                    N = FIRST_NIBBLE(c->V[X]);
+                    c->I = mem[FONT_LOCATION + BYTES_PER_CHAR * N];
                     break;
-                case 0x0033:
+                case 0x33:
+                    N = c->V[X];
+                    N = HEX_TO_DEC(N);
+                    if (N < 100) mem[c->I] = 0;
+                    else mem[c->I] = (int)floor(N/100);
+                    if (N < 10) mem[c->I + 1] = 0;
+                    else mem[c->I + 1] = (int)floor(N/10) % 10;
+                    mem[c->I + 2] = N % 10;
                     break;
-                case 0x0055:
+                case 0x55:
                     // Ambiguous
+                    if (fx55_increment_I)
+                    {
+                        for (size_t i = 0; i <= X; ++i)
+                        {
+                            mem[c->I++] = c->V[i];
+                        }
+                    }
+                    else
+                    {
+                        for (size_t i = 0; i <= X; ++i)
+                        {
+                            mem[c->I + i] = c->V[i];
+                        }
+                    }
                     break;
-                case 0x0065:
+                case 0x65:
                     // Ambiguous
+                    if (fx55_increment_I)
+                    {
+                        for (size_t i = 0; i <= X; ++i)
+                        {
+                            c->V[i] = mem[c->I++];
+                        }
+                    }
+                    else
+                    {
+                        for (size_t i = 0; i <= X; ++i)
+                        {
+                            c->V[i] = mem[c->I + i];
+                        }
+                    }
                     break;
             }
         default:

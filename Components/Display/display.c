@@ -6,6 +6,7 @@
 #include "../CPU/cpu.h"
 #include "../Map/map.h"
 #include "../Memory/mem.h"
+#include "../types.h"
 
 void print_error(const char* err)
 {
