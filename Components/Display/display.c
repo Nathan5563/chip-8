@@ -5,23 +5,12 @@
 #include "display.h"
 #include "../CPU/cpu.h"
 #include "../Map/map.h"
+#include "../Memory/mem.h"
 
 void print_error(const char* err)
 {
     fprintf(stderr, "SDL Error: %s\n", err);
 }
-
-// else
-// {
-//     bool quit = false;  
-//     while (!quit)
-//     {
-//         if (!draw(&window, &surface)) quit = true;
-//         SDL_Event event;
-//         if (SDL_PollEvent(&event) && 
-//             event.type == SDL_QUIT) quit = true;
-//     }
-// }
 
 void initialize_SDL(SDL_Window** window, SDL_Surface** surface)
 {
@@ -41,16 +30,56 @@ void initialize_SDL(SDL_Window** window, SDL_Surface** surface)
     }
 }
 
-// starting x position of draw is modulo 64
-// starting y position of draw is modulo 32
-// find a way to convert the bytes x and y to ints
-// for each n in height, lookup the nth byte including and after the one pointed to by I
-// figure out what to do if I is pointing to a WORD
-// XOR each bit in each byte with bits starting from (x, y) and ending on (64, y) on the screen, 
-//  or until sprite data runs out
-// stop drawing when position (64, 32) is reached
+int get_index(int x, int y)
+{
+    return (y * 64) + x;
+}
+
+bool xor(int bit, cpu* c, BYTE* x, BYTE* y)
+{
+    int idx = get_index(*x, *y);
+    if (idx % 64 == 0) return false;
+    if (idx >= 2048) return false;
+    if (bit && map[idx])
+    {
+        map[idx] = 0;
+        cpu_toggle_flag(c, true);
+        printf("Turned off!\n");
+    }
+    else if (bit)
+    {
+        map[idx] = 1;
+        printf("Turned on!\n");
+    }
+    (*x)++;
+    return true;
+}
+
+void foreach_bit(BYTE num, bool (*f)(int, cpu*, BYTE*, BYTE*), cpu* c, BYTE* x, BYTE* y)
+{
+    bool drawing;
+    for (int i = 7; i >= 0; i--) 
+    {
+        int bit = (num & (1 << i)) ? 1 : 0;
+        drawing = f(bit, c, x, y);
+        if (!drawing) return;
+    }
+}
+
 void draw(cpu* c, SDL_Window** window, SDL_Surface** surface, BYTE x, BYTE y, int height)
 {
+    BYTE x_pos = x & 63;
+    BYTE y_pos = y & 31;
+    WORD reg = cpu_get_index_reg(c);
+    cpu_toggle_flag(c, false);
+    for (size_t N = 0; N < height; ++N)
+    {
+        BYTE sprite_data = mem[reg + N];
+        foreach_bit(sprite_data, xor, c, &x_pos, &y_pos);
+        y_pos++;
+        x_pos = x & 63;
+    }
+    
     SDL_Rect rect;
     rect.w = GRID_SIZE;
     rect.h = GRID_SIZE;
