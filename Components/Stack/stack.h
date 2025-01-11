@@ -15,7 +15,7 @@ typedef struct _stack stack;
 stack* stack_create();
 
 /**
- * Checks if a stack is empty.
+ * Checks if the stack is empty.
  * 
  * @param s a pointer to a stack
  */
@@ -38,8 +38,7 @@ void stack_push(stack* s, WORD val);
 WORD stack_peek(stack* s);
 
 /**
- * Returns the top value and removes it from the stack. It is the
- * responsibility of the caller to free the returned value.
+ * Returns the top value and removes it from the stack.
  * 
  * @param s a pointer to a stack
  * @return a pointer to the top value
