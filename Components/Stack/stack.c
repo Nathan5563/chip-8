@@ -20,7 +20,7 @@ stack* stack_create()
     s->length = 0;
     s->cap = INIT_STACK_CAP;
     s->arr = malloc(s->cap * sizeof(WORD));
-    s->top = NULL;
+    s->top = 0;
     return s;
 }
 

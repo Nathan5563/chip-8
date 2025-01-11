@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "../types.h"
+
 struct _stack;
 typedef struct _stack stack;
 
