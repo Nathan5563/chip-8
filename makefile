@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g3 -Wall -pedantic
+CFLAGS=-g3 -Wall -pedantic -lm
 LDFLAGS=$(shell pkg-config --libs sdl2)
 
 all: chip8
