@@ -165,6 +165,9 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     break;
                 case 0x6:
                     // Ambiguous
+                    if (_8xy6_change_VX) c->V[X] = c->V[Y];
+                    N = c->V[X];
+                    c->V[0xF] = ((c->V[X] >>= 1) << 1) != N ? 1 : 0;
                     break;
                 case 0x7:
                     c->V[X] = c->V[Y] - c->V[X];
@@ -173,6 +176,9 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     break;
                 case 0xE:
                     // Ambiguous
+                    if (_8xy6_change_VX) c->V[X] = c->V[Y];
+                    N = c->V[X];
+                    c->V[0xF] = ((c->V[X] <<= 1) >> 1) != N ? 1 : 0;
                     break;
             }
         case 0x9:
@@ -185,6 +191,12 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
             break;
         case 0xB:
             // Ambiguous
+            if (_bnnn_uses_V0) c->PC = TRAILING_BITS(ins) + c->V[0];
+            else
+            {
+                X = THIRD_BIT(ins);
+                c->PC = TRAILING_BITS(ins) + c->V[X];
+            }
             break;
         case 0xC:
             X = THIRD_BIT(ins);
@@ -241,7 +253,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     break;
                 case 0x55:
                     // Ambiguous
-                    if (fx55_increment_I)
+                    if (_fx55_increment_I)
                     {
                         for (size_t i = 0; i <= X; ++i)
                         {
@@ -258,7 +270,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     break;
                 case 0x65:
                     // Ambiguous
-                    if (fx55_increment_I)
+                    if (_fx55_increment_I)
                     {
                         for (size_t i = 0; i <= X; ++i)
                         {
