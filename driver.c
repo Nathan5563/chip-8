@@ -12,9 +12,9 @@
 #include "Components/Parser/load_rom.h"
 #include "Components/Display/display.h"
 
-#define S_TO_NS 1000000000L
+#define S_TO_NS 1000000000
 
-#define FREQUENCY 100
+#define FREQUENCY 75000
 
 /**
  * Thread globals
@@ -67,44 +67,41 @@ FILE* validate_cli(int argc, char* argv[])
     return rom;
 }
 
-struct timespec get_time_diff(unsigned long time)
+struct timespec get_time_diff(unsigned long time, unsigned long cycle)
 {
+    unsigned long diff = cycle - time;
     struct timespec time_diff;
-    time_diff.tv_sec = 0;
-    while (time >= S_TO_NS)
-    {
-        time_diff.tv_sec += 1;
-        time -= S_TO_NS;
-    }
-    time_diff.tv_nsec = time;
+    time_diff.tv_sec = floor(diff/S_TO_NS);
+    diff -= (time_diff.tv_sec * S_TO_NS);
+    time_diff.tv_nsec = diff;
     return time_diff;
 }
 
 void main_loop(cpu* c, SDL_Window** window, SDL_Surface** surface)
 {
-    // const double cycle_time = 1/FREQUENCY * S_TO_NS;
-    // struct timespec start, end;  
+    unsigned long cycle_time = S_TO_NS/FREQUENCY;
+    struct timespec start, end;  
     bool quit = false;
     while (!quit)
     {
-        // clock_gettime(CLOCK_MONOTONIC, &start);
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
         SDL_Event event;
         if (SDL_PollEvent(&event) && 
             event.type == SDL_QUIT) quit = true;
         WORD ins = cpu_fetch(c);
         cpu_exec(c, ins, quit, window, surface);
-        SDL_UpdateWindowSurface(*window);
+        if (cpu_has_drawn(c)) SDL_UpdateWindowSurface(*window);
 
-        // clock_gettime(CLOCK_MONOTONIC, &end);
+        clock_gettime(CLOCK_MONOTONIC, &end);
 
         // sleep the time difference if loop is executed too quickly
         // to match the required cycle time
-        // unsigned long elapsed_time = (end.tv_sec - start.tv_sec) * S_TO_NS + (end.tv_nsec - start.tv_nsec);
-        // if (elapsed_time < cycle_time) {
-        //     struct timespec sleep_time = get_time_diff(elapsed_time);
-        //     nanosleep(&sleep_time, NULL);
-        // }
+        unsigned long elapsed_time = (end.tv_sec - start.tv_sec) * S_TO_NS + (end.tv_nsec - start.tv_nsec);
+        if (elapsed_time < cycle_time) {
+            struct timespec sleep_time = get_time_diff(elapsed_time, cycle_time);
+            nanosleep(&sleep_time, NULL);
+        }
     }
 }
 

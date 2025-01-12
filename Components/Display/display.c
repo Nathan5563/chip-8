@@ -44,8 +44,8 @@ int get_index(int x, int y)
 
 bool xor(int bit, cpu* c, BYTE* x, BYTE* y)
 {
+    if (*x == 64) return false;
     int idx = get_index(*x, *y);
-    if (idx % 64 == 0) return false;
     if (idx >= 2048) return false;
     if (bit && map[idx])
     {
