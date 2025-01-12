@@ -4,10 +4,10 @@ LDFLAGS=$(shell pkg-config --libs sdl2)
 
 all: chip8
 
-chip8: OBJs/cpu.o OBJs/display.o OBJs/stack.o OBJs/load_rom.o OBJs/map.o OBJs/mem.o OBJs/quirks.o OBJs/driver.o
+chip8: OBJs/cpu.o OBJs/display.o OBJs/stack.o OBJs/load_rom.o OBJs/map.o OBJs/mem.o OBJs/quirks.o OBJs/driver.o OBJs/font.o
 	${CC} ${CFLAGS} -o $@ $^ ${LDFLAGS}
 
-OBJs/cpu.o: Components/CPU/cpu.c Components/CPU/cpu.h Components/Display/display.h Components/Stack/stack.h Components/Map/map.h Components/Memory/mem.h Components/font.h Components/Quirks/quirks.h Components/types.h
+OBJs/cpu.o: Components/CPU/cpu.c Components/CPU/cpu.h Components/Display/display.h Components/Stack/stack.h Components/Map/map.h Components/Memory/mem.h Components/Quirks/quirks.h Components/types.h OBJs/font.o
 	${CC} ${CFLAGS} -c Components/CPU/cpu.c -o OBJs/cpu.o
 
 OBJs/display.o: Components/Display/display.c Components/Display/display.h Components/CPU/cpu.h Components/Map/map.h Components/Memory/mem.h Components/types.h
@@ -27,6 +27,9 @@ OBJs/mem.o: Components/Memory/mem.c Components/Memory/mem.h
 
 OBJs/quirks.o: Components/Quirks/quirks.c Components/Quirks/quirks.h
 	${CC} ${CFLAGS} -c Components/Quirks/quirks.c -o OBJs/quirks.o
+
+OBJs/font.o: Components/Font/font.c Components/Font/font.h Components/types.h
+	${CC} ${CFLAGS} -c Components/Font/font.c -o OBJs/font.o
 
 OBJs/driver.o: driver.c Components/CPU/cpu.h Components/Parser/load_rom.h Components/Display/display.h
 	${CC} ${CFLAGS} -c driver.c -o driver.o
