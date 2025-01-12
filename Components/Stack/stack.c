@@ -4,7 +4,7 @@
 #include "stack.h"
 #include "../types.h"
 
-#define INIT_STACK_CAP 10
+#define INIT_STACK_CAP 12
 
 struct _stack
 {
