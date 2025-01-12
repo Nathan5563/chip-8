@@ -14,7 +14,8 @@
 
 #define S_TO_NS 1000000000
 
-#define FREQUENCY 75000
+// TODO: move to separate settings file to be user-configurable
+#define FREQUENCY 750 // in Hz
 
 /**
  * Thread globals
