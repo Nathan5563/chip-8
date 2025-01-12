@@ -27,4 +27,6 @@ void cpu_decrement_timers(cpu* c);
 
 void cpu_toggle_flag(cpu* c, bool enable);
 
+BYTE cpu_get_sound(cpu* c);
+
 #endif

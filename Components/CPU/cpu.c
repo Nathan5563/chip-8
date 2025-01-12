@@ -470,3 +470,8 @@ void cpu_toggle_flag(cpu* c, bool enable)
     }
     return;
 }
+
+BYTE cpu_get_sound(cpu* c)
+{
+    return c->Sound;
+}
