@@ -9,7 +9,7 @@
 #include "../Stack/stack.h"
 #include "../Map/map.h"
 #include "../Memory/mem.h"
-#include "../font.h"
+#include "../Font/font.h"
 #include "../types.h"
 #include "../Quirks/quirks.h"
 
@@ -91,16 +91,154 @@ WORD cpu_fetch(cpu* c)
     return ins;
 }
 
+static int get_scan_code(WORD k)
+{
+    int scan_code;
+    switch(k)
+    {
+        case 0:
+            scan_code = SDL_SCANCODE_0;
+            break;
+        case 1:
+            scan_code = SDL_SCANCODE_1;
+            break;
+        case 2:
+            scan_code = SDL_SCANCODE_2;
+            break;
+        case 3:
+            scan_code = SDL_SCANCODE_3;
+            break;
+        case 4:
+            scan_code = SDL_SCANCODE_4;
+            break;
+        case 5:
+            scan_code = SDL_SCANCODE_5;
+            break;
+        case 6:
+            scan_code = SDL_SCANCODE_6;
+            break;
+        case 7:
+            scan_code = SDL_SCANCODE_7;
+            break;
+        case 8:
+            scan_code = SDL_SCANCODE_8;
+            break;
+        case 9:
+            scan_code = SDL_SCANCODE_9;
+            break;
+        case 0xA:
+            scan_code = SDL_SCANCODE_A;
+            break;
+        case 0xB:
+            scan_code = SDL_SCANCODE_B;
+            break;
+        case 0xC:
+            scan_code = SDL_SCANCODE_C;
+            break;
+        case 0xD:
+            scan_code = SDL_SCANCODE_D;
+            break;
+        case 0xE:
+            scan_code = SDL_SCANCODE_E;
+            break;
+        case 0xF:
+            scan_code = SDL_SCANCODE_F;
+            break;
+        default:
+            scan_code = 0;
+            break;
+    }
+    return scan_code;
+}
+
+WORD get_key_down()
+{
+    WORD key;
+    SDL_Event event;
+    bool key_pressed = false;   
+    while (!key_pressed) 
+    {
+        if (!SDL_PollEvent(&event)) continue;
+        if (event.type == SDL_KEYUP) 
+        {
+            key_pressed = true;
+            switch (event.key.keysym.scancode) 
+            {
+                case SDL_SCANCODE_0:
+                    key = 0;
+                    break;
+                case SDL_SCANCODE_1:
+                    key = 1;
+                    break;
+                case SDL_SCANCODE_2:
+                    key = 2;
+                    break;
+                case SDL_SCANCODE_3:
+                    key = 3;
+                    break;
+                case SDL_SCANCODE_4:
+                    key = 4;
+                    break;
+                case SDL_SCANCODE_5:
+                    key = 5;
+                    break;
+                case SDL_SCANCODE_6:
+                    key = 6;
+                    break;
+                case SDL_SCANCODE_7:
+                    key = 7;
+                    break;
+                case SDL_SCANCODE_8:
+                    key = 8;
+                    break;
+                case SDL_SCANCODE_9:
+                    key = 9;
+                    break;
+                case SDL_SCANCODE_A:
+                    key = 0xA;
+                    break;
+                case SDL_SCANCODE_B:
+                    key = 0xB;
+                    break;
+                case SDL_SCANCODE_C:
+                    key = 0xC;
+                    break;
+                case SDL_SCANCODE_D:
+                    key = 0xD;
+                    break;
+                case SDL_SCANCODE_E:
+                    key = 0xE;
+                    break;
+                case SDL_SCANCODE_F:
+                    key = 0xF;
+                    break;
+                default:
+                    key_pressed = false;
+                    break;
+            }
+        }
+        else if (event.type == SDL_QUIT)
+        {
+            key_pressed = true;
+        }
+    }
+    return key;
+}
+
+// TODO: 0xE and 0xFX0A
 void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** surface)
 {
     c->drawn = false;
     WORD X, Y, N;
+    const uint8_t* keyboard_state;
+    BYTE f;
     switch(FOURTH_BIT(ins))
     {
         case 0x0:
             switch(FIRST_BYTE(ins))
             {
                 case 0xE0:
+                    c->drawn = true;
                     clear_screen();
                     break;
                 case 0xEE:
@@ -146,22 +284,27 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     break;
                 case 0x1:
                     c->V[X] |= c->V[Y];
+                    c->V[0xF] = 0;
                     break;
                 case 0x2:
                     c->V[X] &= c->V[Y];
+                    c->V[0xF] = 0;
                     break;
                 case 0x3:
                     c->V[X] ^= c->V[Y];
+                    c->V[0xF] = 0;
                     break;
                 case 0x4:
+                    if ((c->V[X] + c->V[Y]) >= BYTE_LIMIT) f = 1;
+                    else f = 0;
                     c->V[X] += c->V[Y];
-                    if (c->V[X] + c->V[Y] >= BYTE_LIMIT) c->V[0xF] = 1;
-                    else c->V[0xF] = 0;
+                    c->V[0xF] = f;
                     break;
                 case 0x5:
+                    if (c->V[X] >= c->V[Y]) f = 1;
+                    else f = 0;
                     c->V[X] -= c->V[Y];
-                    if (c->V[X] > c->V[Y]) c->V[0xF] = 1;
-                    else c->V[0xF] = 0;
+                    c->V[0xF] = f;
                     break;
                 case 0x6:
                     // Ambiguous
@@ -170,9 +313,10 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     c->V[0xF] = ((c->V[X] >>= 1) << 1) != N ? 1 : 0;
                     break;
                 case 0x7:
+                    if (c->V[Y] >= c->V[X]) f = 1;
+                    else f = 0;
                     c->V[X] = c->V[Y] - c->V[X];
-                    if (c->V[Y] > c->V[X]) c->V[0xF] = 1;
-                    else c->V[0xF] = 0;
+                    c->V[0xF] = f;
                     break;
                 case 0xE:
                     // Ambiguous
@@ -181,6 +325,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     c->V[0xF] = ((c->V[X] <<= 1) >> 1) != N ? 1 : 0;
                     break;
             }
+            break;
         case 0x9:
             X = THIRD_BIT(ins);
             Y = SECOND_BIT(ins);
@@ -202,6 +347,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
             X = THIRD_BIT(ins);
             // pseudorandom number between 0x00 (0) and 0xFF (255)
             c->V[X] = (rand() % (0xFF - 0x00 + 1) + 0x00) & FIRST_BYTE(ins);
+            break;
         case 0xD:
             c->drawn = true;
             X = THIRD_BIT(ins);
@@ -211,13 +357,19 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
             break;
         case 0xE:
             X = THIRD_BIT(ins);
+            N = FIRST_NIBBLE(c->V[X]);
+            int scan_code = get_scan_code(N);
+            keyboard_state = SDL_GetKeyboardState(NULL);
             switch(FIRST_BYTE(ins))
             {
                 case 0x9E:
+                    if (keyboard_state[scan_code]) c->PC += 2;
                     break;
                 case 0xA1:
+                    if (!keyboard_state[scan_code]) c->PC += 2;
                     break;
             }
+            break;
         case 0xF:
             X = THIRD_BIT(ins);
             switch(FIRST_BYTE(ins))
@@ -226,6 +378,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     c->V[X] = c->Delay;
                     break;
                 case 0x0A:
+                    c->V[X] = get_key_down();
                     break;
                 case 0x15:
                     c->Delay = c->V[X];
@@ -239,8 +392,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     // might need to set VF = 0 otherwise, but leave as is for now
                     break;
                 case 0x29:
-                    N = FIRST_NIBBLE(c->V[X]);
-                    c->I = mem[FONT_LOCATION + BYTES_PER_CHAR * N];
+                    c->I = mem[FONT_LOCATION + (BYTES_PER_CHAR * c->V[X])];
                     break;
                 case 0x33:
                     N = c->V[X];
@@ -286,6 +438,7 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     }
                     break;
             }
+            break;
         default:
             quit = true;
             break;

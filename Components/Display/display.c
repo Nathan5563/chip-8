@@ -8,6 +8,12 @@
 #include "../Memory/mem.h"
 #include "../types.h"
 
+#define MAP_WIDTH 64
+#define MAP_HEIGHT 32
+#define GRID_SIZE 20
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 640
+
 void print_error(const char* err)
 {
     fprintf(stderr, "SDL Error: %s\n", err);
@@ -67,16 +73,19 @@ void foreach_bit(BYTE num, bool (*f)(int, cpu*, BYTE*, BYTE*), cpu* c, BYTE* x, 
 
 void draw(cpu* c, SDL_Window** window, SDL_Surface** surface, BYTE x, BYTE y, int height)
 {
-    BYTE x_pos = x & 63;
-    BYTE y_pos = y & 31;
-    WORD reg = cpu_get_index_reg(c);
-    cpu_toggle_flag(c, false);
-    for (size_t N = 0; N < height; ++N)
+    if (height != 0)
     {
-        BYTE sprite_data = mem[reg + N];
-        foreach_bit(sprite_data, xor, c, &x_pos, &y_pos);
-        y_pos++;
-        x_pos = x & 63;
+        BYTE x_pos = x & 63;
+        BYTE y_pos = y & 31;
+        WORD reg = cpu_get_index_reg(c);
+        cpu_toggle_flag(c, false);
+        for (size_t N = 0; N < height; ++N)
+        {
+            BYTE sprite_data = mem[reg + N];
+            foreach_bit(sprite_data, xor, c, &x_pos, &y_pos);
+            y_pos++;
+            x_pos = x & 63;
+        }
     }
     
     SDL_Rect rect;
@@ -84,14 +93,22 @@ void draw(cpu* c, SDL_Window** window, SDL_Surface** surface, BYTE x, BYTE y, in
     rect.h = GRID_SIZE;
     for (int y = 0; y < MAP_HEIGHT; y++)
     {
-        rect.y = 0 + (y * GRID_SIZE);
+        rect.y = y * GRID_SIZE;
         for (int x = 0; x < MAP_WIDTH; x++)
         {
-            rect.x = 0 + (x * GRID_SIZE);
+            rect.x = x * GRID_SIZE;
             if (map[y * MAP_WIDTH + x] == 1)
             {
                 if (SDL_FillRect(*surface, &rect, SDL_MapRGB(
                     (*surface)->format, 255, 255, 255)))
+                {
+                    print_error(SDL_GetError());
+                }
+            }
+            else
+            {
+                if (SDL_FillRect(*surface, &rect, SDL_MapRGB(
+                    (*surface)->format, 0, 0, 0)))
                 {
                     print_error(SDL_GetError());
                 }

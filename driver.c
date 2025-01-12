@@ -14,6 +14,8 @@
 
 #define S_TO_NS 1000000000L
 
+#define FREQUENCY 100
+
 /**
  * Thread globals
  */
@@ -80,29 +82,29 @@ struct timespec get_time_diff(unsigned long time)
 
 void main_loop(cpu* c, SDL_Window** window, SDL_Surface** surface)
 {
-    const double cycle_time = 1428571; // ~700 ins/s
-    struct timespec start, end;  
+    // const double cycle_time = 1/FREQUENCY * S_TO_NS;
+    // struct timespec start, end;  
     bool quit = false;
     while (!quit)
     {
-        clock_gettime(CLOCK_MONOTONIC, &start);
+        // clock_gettime(CLOCK_MONOTONIC, &start);
 
         SDL_Event event;
         if (SDL_PollEvent(&event) && 
             event.type == SDL_QUIT) quit = true;
         WORD ins = cpu_fetch(c);
         cpu_exec(c, ins, quit, window, surface);
-        if (cpu_has_drawn(c)) SDL_UpdateWindowSurface(*window);
+        SDL_UpdateWindowSurface(*window);
 
-        clock_gettime(CLOCK_MONOTONIC, &end);
+        // clock_gettime(CLOCK_MONOTONIC, &end);
 
         // sleep the time difference if loop is executed too quickly
-        // to match the required ~700 ins/s
-        unsigned long elapsed_time = (end.tv_sec - start.tv_sec) * S_TO_NS + (end.tv_nsec - start.tv_nsec);
-        if (elapsed_time < cycle_time) {
-            struct timespec sleep_time = get_time_diff(elapsed_time);
-            nanosleep(&sleep_time, NULL);
-        }
+        // to match the required cycle time
+        // unsigned long elapsed_time = (end.tv_sec - start.tv_sec) * S_TO_NS + (end.tv_nsec - start.tv_nsec);
+        // if (elapsed_time < cycle_time) {
+        //     struct timespec sleep_time = get_time_diff(elapsed_time);
+        //     nanosleep(&sleep_time, NULL);
+        // }
     }
 }
 

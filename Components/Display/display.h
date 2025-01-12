@@ -8,12 +8,6 @@
 #include "../CPU/cpu.h"
 #include "../types.h"
 
-#define MAP_WIDTH 64
-#define MAP_HEIGHT 32
-#define GRID_SIZE 20
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 640
-
 void print_error(const char *err);
 
 void initialize_SDL(SDL_Window** window, SDL_Surface** surface);
