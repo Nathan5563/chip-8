@@ -1,37 +1,23 @@
+#define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <math.h>
+#include <string.h>
 
 #include <SDL2/SDL.h>
-
 #include "Components/CPU/cpu.h"
 #include "Components/Parser/load_rom.h"
 #include "Components/Display/display.h"
+#include "Components/Quirks/quirks.h"
+#include "Components/Timer/timer.h"
+extern int refresh_rate;
 
 #define S_TO_NS 1000000000
-
-// TODO: move to separate settings file to be user-configurable
-#define FREQUENCY 750 // in Hz
-
-/**
- * Thread globals
- */
-pthread_mutex_t lock;
-bool quit_60Hz_thread = false;
-
-void* timers_60Hz(void* arg) {
-    pthread_mutex_lock(&lock);
-    while (!quit_60Hz_thread) {
-        usleep(16666);  // Sleep for ~16.67ms (1/60th of a second)
-        cpu_decrement_timers((cpu*)arg);
-    }
-    pthread_mutex_unlock(&lock);
-    return NULL;
-}
+#define FREQUENCY 750
 
 FILE* validate_cli(int argc, char* argv[])
 {
@@ -72,7 +58,7 @@ struct timespec get_time_diff(unsigned long time, unsigned long cycle)
 {
     unsigned long diff = cycle - time;
     struct timespec time_diff;
-    time_diff.tv_sec = floor(diff/S_TO_NS);
+    time_diff.tv_sec = diff / S_TO_NS;
     diff -= (time_diff.tv_sec * S_TO_NS);
     time_diff.tv_nsec = diff;
     return time_diff;
@@ -88,16 +74,21 @@ void main_loop(cpu* c, SDL_Window** window, SDL_Surface** surface)
         clock_gettime(CLOCK_MONOTONIC, &start);
 
         SDL_Event event;
-        if (SDL_PollEvent(&event) && 
-            event.type == SDL_QUIT) quit = true;
+        while(SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+                quit = true;
+            else if (event.type == SDL_USEREVENT)
+            {
+                cpu_decrement_timers(c);
+                SDL_UpdateWindowSurface(*window);
+            }
+        }
         WORD ins = cpu_fetch(c);
         cpu_exec(c, ins, quit, window, surface);
-        if (cpu_has_drawn(c)) SDL_UpdateWindowSurface(*window);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
 
-        // sleep the time difference if loop is executed too quickly
-        // to match the required cycle time
         unsigned long elapsed_time = (end.tv_sec - start.tv_sec) * S_TO_NS + (end.tv_nsec - start.tv_nsec);
         if (elapsed_time < cycle_time) {
             struct timespec sleep_time = get_time_diff(elapsed_time, cycle_time);
@@ -106,11 +97,9 @@ void main_loop(cpu* c, SDL_Window** window, SDL_Surface** surface)
     }
 }
 
-void cleanup(cpu* c, SDL_Window** window, pthread_t* thread)
+void cleanup(cpu* c, SDL_Window** window, SDL_TimerID timer_id)
 {
-    quit_60Hz_thread = true;
-    pthread_join(*thread, NULL);
-    pthread_mutex_destroy(&lock);
+    SDL_RemoveTimer(timer_id);
     destroy_SDL(window);
     cpu_destroy(c);
 }
@@ -127,11 +116,9 @@ int main(int argc, char* argv[]) {
     SDL_Surface* surface = NULL;
     initialize_SDL(&window, &surface);
 
-    pthread_mutex_init(&lock, NULL);
-    pthread_t thread_60hz;
-    pthread_create(&thread_60hz, NULL, timers_60Hz, c);
+    SDL_TimerID timer_id = SDL_AddTimer(1000 / refresh_rate, sdl_timer_callback, NULL);
 
     main_loop(c, &window, &surface);
-    cleanup(c, &window, &thread_60hz);
+    cleanup(c, &window, timer_id);
     return 0;
 }
