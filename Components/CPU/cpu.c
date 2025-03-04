@@ -392,8 +392,9 @@ void cpu_exec(cpu* c, WORD ins, bool quit, SDL_Window** window, SDL_Surface** su
                     // might need to set VF = 0 otherwise, but leave as is for now
                     break;
                 case 0x29:
+                    // FIX: set index register to FONT_LOCATION offset rather than reading from memory
                     N = FIRST_NIBBLE(c->V[X]);
-                    c->I = mem[FONT_LOCATION + (BYTES_PER_CHAR * N)];
+                    c->I = FONT_LOCATION + (BYTES_PER_CHAR * N);
                     break;
                 case 0x33:
                     N = c->V[X];
